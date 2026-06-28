@@ -1,0 +1,23 @@
+{
+  "entity": "Anthropic",
+  "success": true,
+  "elapsed_s": 41.5,
+  "execution_log": [
+    {
+      "node": "plan",
+      "timestamp": "2026-06-28T20:02:02.585433",
+      "plan_length": 6
+    },
+    {
+      "node": "collect",
+      "timestamp": "2026-06-28T20:02:08.676360",
+      "tools_run": 6
+    },
+    {
+      "node": "synthesize",
+      "timestamp": "2026-06-28T20:02:40.018066",
+      "report_chars": 6578
+    }
+  ],
+  "tool_results_count": 6
+}

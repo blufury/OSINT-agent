@@ -15,10 +15,10 @@ def github_lookup(entity: str) -> str:
         Formatted string with org/user metadata, top repos, and recent activity.
     """
     try:
-        from github import Github, UnknownObjectException
+        from github import Github, UnknownObjectException, RateLimitExceededException
 
         token = os.environ.get("GITHUB_TOKEN")
-        g = Github(token) if token else Github()
+        g = Github(token, retry=0) if token else Github(retry=0)
 
         lines = []
 
@@ -52,5 +52,7 @@ def github_lookup(entity: str) -> str:
 
         return "\n".join(lines)
 
+    except RateLimitExceededException:
+        return "GitHub lookup skipped: unauthenticated rate limit exceeded. Set GITHUB_TOKEN to increase limits."
     except Exception as e:
         return f"GitHub lookup error: {e}"

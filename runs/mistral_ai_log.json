@@ -1,0 +1,23 @@
+{
+  "entity": "Mistral AI",
+  "success": true,
+  "elapsed_s": 48.8,
+  "execution_log": [
+    {
+      "node": "plan",
+      "timestamp": "2026-06-28T20:03:38.725693",
+      "plan_length": 6
+    },
+    {
+      "node": "collect",
+      "timestamp": "2026-06-28T20:03:42.870486",
+      "tools_run": 6
+    },
+    {
+      "node": "synthesize",
+      "timestamp": "2026-06-28T20:04:21.634470",
+      "report_chars": 6954
+    }
+  ],
+  "tool_results_count": 6
+}

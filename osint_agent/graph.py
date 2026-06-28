@@ -6,13 +6,14 @@ import json
 import os
 from datetime import datetime
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+import anthropic
 from langgraph.graph import END, StateGraph
-from langgraph.prebuilt import ToolNode
 
 from osint_agent.state import AgentState, ToolResult
 from osint_agent.tools import ALL_TOOLS
+
+_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+_MODEL = "claude-opus-4-8"
 
 _PLAN_SYSTEM = """You are an OSINT research planner. Given a seed entity (an organization,
 domain, or technical target), produce a JSON search plan listing the tools to invoke and the
@@ -52,18 +53,20 @@ def _log(state: AgentState, node: str, detail: dict) -> list[dict]:
 
 def plan_node(state: AgentState) -> dict:
     """Query-planning step: LLM decomposes seed entity into tool invocation plan."""
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    messages = [
-        SystemMessage(content=_PLAN_SYSTEM),
-        HumanMessage(content=f"Seed entity: {state.seed_entity}"),
-    ]
-    response = llm.invoke(messages)
-    raw = response.content.strip()
+    response = _client.messages.create(
+        model=_MODEL,
+        max_tokens=1024,
+        thinking={"type": "adaptive"},
+        system=_PLAN_SYSTEM,
+        messages=[{"role": "user", "content": f"Seed entity: {state.seed_entity}"}],
+    )
+    raw = next(
+        (b.text for b in response.content if b.type == "text"), ""
+    ).strip()
 
     try:
         plan = json.loads(raw)
     except json.JSONDecodeError:
-        # Strip markdown code fences if present
         import re
         match = re.search(r"```(?:json)?\s*([\s\S]+?)```", raw)
         plan = json.loads(match.group(1)) if match else []
@@ -98,21 +101,26 @@ def collect_node(state: AgentState) -> dict:
 
 def synthesize_node(state: AgentState) -> dict:
     """LLM synthesizes raw tool results into a structured Markdown report."""
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
     results_text = "\n\n".join(
         f"=== {r.tool_name} (query: {r.query}) ===\n"
         + (r.raw_output if not r.error else f"ERROR: {r.error}")
         for r in state.tool_results
     )
 
-    messages = [
-        SystemMessage(content=_SYNTH_SYSTEM),
-        HumanMessage(content=f"Seed entity: {state.seed_entity}\n\nRaw results:\n{results_text}"),
-    ]
-    response = llm.invoke(messages)
-    log = _log(state, "synthesize", {"report_chars": len(response.content)})
-    return {"report": response.content, "execution_log": log}
+    with _client.messages.stream(
+        model=_MODEL,
+        max_tokens=4096,
+        thinking={"type": "adaptive"},
+        system=_SYNTH_SYSTEM,
+        messages=[{
+            "role": "user",
+            "content": f"Seed entity: {state.seed_entity}\n\nRaw results:\n{results_text}",
+        }],
+    ) as stream:
+        final = stream.get_final_message()
+    report = next((b.text for b in final.content if b.type == "text"), "")
+    log = _log(state, "synthesize", {"report_chars": len(report)})
+    return {"report": report, "execution_log": log}
 
 
 def build_graph() -> StateGraph:

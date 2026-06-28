@@ -1,0 +1,23 @@
+{
+  "entity": "OpenAI",
+  "success": true,
+  "elapsed_s": 52.8,
+  "execution_log": [
+    {
+      "node": "plan",
+      "timestamp": "2026-06-28T20:02:45.403132",
+      "plan_length": 6
+    },
+    {
+      "node": "collect",
+      "timestamp": "2026-06-28T20:02:54.997850",
+      "tools_run": 6
+    },
+    {
+      "node": "synthesize",
+      "timestamp": "2026-06-28T20:03:32.860795",
+      "report_chars": 7603
+    }
+  ],
+  "tool_results_count": 6
+}

@@ -58,7 +58,7 @@ def main() -> None:
     parser.add_argument("--output", "-o", help="Directory to save report and logs", default=None)
     args = parser.parse_args()
 
-    missing_keys = [k for k in ["OPENAI_API_KEY", "TAVILY_API_KEY"] if not os.environ.get(k)]
+    missing_keys = [k for k in ["ANTHROPIC_API_KEY", "TAVILY_API_KEY"] if not os.environ.get(k)]
     if missing_keys:
         console.print(f"[red]Missing required environment variables: {', '.join(missing_keys)}[/red]")
         console.print("Copy .env.example to .env and fill in your API keys.")
